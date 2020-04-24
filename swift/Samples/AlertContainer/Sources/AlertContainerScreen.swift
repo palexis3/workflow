@@ -2,16 +2,16 @@ import WorkflowUI
 
 
 /// An `AlertContainerScreen` displays a base screen with an optional alert over top of it.
-public struct AlertContainerScreen: Screen {
+public struct AlertContainerScreen<BaseScreen: Screen>: Screen {
 
     /// The base screen to show underneath any visible alert.
-    public var baseScreen: AnyScreen
+    public var baseScreen: BaseScreen
 
     /// The presented alert.
     public var alert: Alert?
 
-    public init<ScreenType: Screen>(baseScreen: ScreenType, alert: Alert? = nil) {
-        self.baseScreen = AnyScreen(baseScreen)
+    public init(baseScreen: BaseScreen, alert: Alert? = nil) {
+        self.baseScreen = baseScreen
         self.alert = alert
     }
 
@@ -25,11 +25,21 @@ public struct Alert {
     public var title: String
     public var message: String
     public var actions: [Action]
+    public var buttonOrder: ButtonOrderStyle
 
-    public init(title: String, message: String, actions: [Action]) {
+    public init(title: String, message: String, actions: [Action], buttonOrder: ButtonOrderStyle = .sideBySide) {
         self.title = title
         self.message = message
         self.actions = actions
+        self.buttonOrder = buttonOrder
+    }
+}
+
+extension Alert {
+    
+    public enum ButtonOrderStyle {
+        case sideBySide
+        case vertical
     }
 }
 
@@ -49,10 +59,9 @@ public struct Action {
 extension Action {
 
     public enum Style {
-        case standard
-
         case primary
-        case destructive
+        case secondary
+        case dismiss
     }
 
 }
