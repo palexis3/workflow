@@ -4,7 +4,7 @@ import WorkflowUI
 
 internal final class AlertContainerViewController<AlertScreen : Screen>: ScreenViewController<AlertContainerScreen<AlertScreen>> {
     
-    private var baseScreenViewController: DescribedViewController? = nil
+    private var baseScreenViewController: DescribedViewController
 
     private let dimmingView = UIView()
     
@@ -17,6 +17,10 @@ internal final class AlertContainerViewController<AlertScreen : Screen>: ScreenV
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        addChild(baseScreenViewController)
+        view.addSubview(baseScreenViewController.view)
+        baseScreenViewController.didMove(toParent: self)
 
         dimmingView.backgroundColor = UIColor(white: 0, alpha: 0.5)
         view.addSubview(dimmingView)
@@ -25,7 +29,8 @@ internal final class AlertContainerViewController<AlertScreen : Screen>: ScreenV
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         
-        baseScreenViewController?.view.frame = view.bounds
+        baseScreenViewController.view.frame = view.bounds
+        
         dimmingView.frame = view.bounds
         dimmingView.isUserInteractionEnabled = (alertView != nil)
         dimmingView.alpha = (alertView != nil) ? 1 : 0
@@ -63,18 +68,7 @@ internal final class AlertContainerViewController<AlertScreen : Screen>: ScreenV
     }
 
     func update() {
-        if let baseScreenViewController = baseScreenViewController {
-            baseScreenViewController.update(screen: screen.baseScreen,  environment: environment)
-        }
-
-        if baseScreenViewController == nil {
-            // We don't have a base screen view controller, so make one.
-            let viewController = DescribedViewController(screen: screen.baseScreen, environment: environment)
-            addChild(viewController)
-            view.insertSubview(viewController.view, belowSubview: dimmingView)
-            viewController.didMove(toParent: self)
-            baseScreenViewController = viewController
-        }
+        baseScreenViewController.update(screen: screen.baseScreen,  environment: environment)
         
         if let alert = screen.alert {
             
@@ -149,7 +143,7 @@ internal final class AlertContainerViewController<AlertScreen : Screen>: ScreenV
     }
 
     public override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-        return baseScreenViewController?.supportedInterfaceOrientations ?? super.supportedInterfaceOrientations
+        return baseScreenViewController.supportedInterfaceOrientations
     }
     
 }

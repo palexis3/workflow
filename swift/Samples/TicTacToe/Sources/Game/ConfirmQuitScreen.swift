@@ -112,5 +112,9 @@ final class ConfirmQuitViewController: ScreenViewController<ConfirmQuitScreen> {
     @objc private func quitButtonTapped(sender: UIButton) {
         onQuitTapped()
     }
+    
+    private func confirmAgain () {
+        
+    }
 
 }

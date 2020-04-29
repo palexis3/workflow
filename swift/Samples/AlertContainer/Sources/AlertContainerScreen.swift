@@ -24,10 +24,10 @@ public struct Alert {
 
     public var title: String
     public var message: String
-    public var actions: [Action]
+    public var actions: [AlertAction]
     public var buttonOrder: ButtonOrderStyle
 
-    public init(title: String, message: String, actions: [Action], buttonOrder: ButtonOrderStyle = .sideBySide) {
+    public init(title: String, message: String, actions: [AlertAction], buttonOrder: ButtonOrderStyle = .sideBySide) {
         self.title = title
         self.message = message
         self.actions = actions
@@ -43,7 +43,7 @@ extension Alert {
     }
 }
 
-public struct Action {
+public struct AlertAction {
 
     public var title: String
     public var style: Style
@@ -56,7 +56,7 @@ public struct Action {
     }
 }
 
-extension Action {
+extension AlertAction {
 
     public enum Style {
         case primary

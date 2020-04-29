@@ -17,6 +17,7 @@ import Workflow
 import WorkflowUI
 import ReactiveSwift
 import BackStackContainer
+import AlertContainer
 
 
 // MARK: Input and Output
@@ -27,7 +28,7 @@ struct ConfirmQuitWorkflow: Workflow {
     
    enum Output {
         case cancel
-        case confirm
+        case quit
     }
 
 }
@@ -37,10 +38,20 @@ struct ConfirmQuitWorkflow: Workflow {
 
 extension ConfirmQuitWorkflow {
 
-    typealias State = Void
+    //typealias State = Void
+    
+    struct State {
+        var step: Step
+        
+        enum Step {
+            case confirmOnce
+            case confirmTwice
+        }
+    }
+
 
     func makeInitialState() -> ConfirmQuitWorkflow.State {
-        return State()
+        return State(step: .confirmOnce)
     }
 
     func workflowDidChange(from previousWorkflow: ConfirmQuitWorkflow, state: inout State) {
@@ -57,6 +68,7 @@ extension ConfirmQuitWorkflow {
         
         case cancel
         case quit
+        case confirm
 
         typealias WorkflowType = ConfirmQuitWorkflow
 
@@ -67,7 +79,10 @@ extension ConfirmQuitWorkflow {
                     return .cancel
                 
                 case .quit:
-                    return .confirm
+                    return .quit
+            case .confirm:
+                state.step = .confirmTwice
+                return nil
             }
         }
     }
@@ -77,19 +92,35 @@ extension ConfirmQuitWorkflow {
 
 extension ConfirmQuitWorkflow {
     
-    typealias Rendering = ConfirmQuitScreen
+    typealias Rendering = (ConfirmQuitScreen, Alert?)
 
     func render(state: ConfirmQuitWorkflow.State, context: RenderContext<ConfirmQuitWorkflow>) -> Rendering {
         
         let sink = context.makeSink(of: Action.self)
+        var alert: Alert? = nil
         
-        return ConfirmQuitScreen(
+        switch state.step {
+        case .confirmOnce:
+            break;
+        case .confirmTwice:
+            alert = Alert(title: "Confirm Again",
+                message: "Do you really want to quit?",
+                actions: [AlertAction(title: "Ok",
+                                      style: AlertAction.Style.dismiss,
+                                      handler: {
+                                        sink.send(.quit)
+                        }
+                    )]
+                )
+        }
+        
+        return (ConfirmQuitScreen(
             question: "Are you sure you want to quit?",
             onQuitTapped: {
-                sink.send(.quit)
+                sink.send(.confirm)
             },
             onCancelTapped: {
                 sink.send(.cancel)
-            })
+            }), alert)
     }
 }
