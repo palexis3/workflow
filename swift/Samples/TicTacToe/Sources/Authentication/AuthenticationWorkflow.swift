@@ -188,14 +188,6 @@ extension AuthenticationWorkflow {
         var modals: [ModalContainerScreenModal] = []
         var alert: Alert?
 
-        let authenticationError: AuthenticationService.AuthenticationError?
-
-        if case let .authenticationErrorAlert(error) = state {
-            authenticationError = error
-        } else {
-            authenticationError = nil
-        }
-
         let loginScreen = LoginWorkflow().mapOutput({ output -> Action in
             switch output {
             case .login(email: let email, password: let password):
@@ -207,10 +199,10 @@ extension AuthenticationWorkflow {
         switch state {
             case .emailPassword:
                 break
-            case .authenticationErrorAlert(error: let error):
-                if error != nil {
-                    alert = Alert(title: "Confirm Again",
-                    message: "Do you really want to quit?",
+        case .authenticationErrorAlert(error: let error):
+                if let error = error {
+                    alert = Alert(title: "Error",
+                                  message: error.localizedDescription,
                     actions: [AlertAction(title: "Ok",
                                           style: AlertAction.Style.dismiss,
                                           handler: {

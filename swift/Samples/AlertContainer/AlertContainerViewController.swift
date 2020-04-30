@@ -152,8 +152,23 @@ internal final class AlertContainerViewController<AlertScreen : Screen>: ScreenV
 
 private final class AlertView: UIView {
     public var alert : Alert?
-    private lazy var title: UILabel = .init()
-    private lazy var message: UILabel = .init()
+    private lazy var title: UILabel = {
+      let title = UILabel()
+      title.font = UIFont.systemFont(ofSize: 18, weight: .medium)
+      title.textAlignment = .center
+      title.translatesAutoresizingMaskIntoConstraints = false
+      return title
+    }()
+    
+    private lazy var message: UILabel = {
+      let message = UILabel()
+        message.font = UIFont.systemFont(ofSize: 18, weight: .medium)
+        message.textAlignment = .center
+        message.numberOfLines = 0
+        message.lineBreakMode = .byWordWrapping
+        message.translatesAutoresizingMaskIntoConstraints = false
+        return message
+    }()
     
     public required init(alert: Alert?) {
         self.alert = alert
@@ -171,15 +186,56 @@ private final class AlertView: UIView {
         
         if let alert = alert {
             
-            let action:AlertAction = alert.actions[0]
+            title.text = alert.title
+            addSubview(title)
             
-            let dismissButton = AlertButton(action: action)
-            dismissButton.backgroundColor = UIColor(red: 41/255, green: 150/255, blue: 204/255, alpha: 1.0)
-            dismissButton.frame = CGRect(x: 0, y: 0, width: 100, height: 50)
-            dismissButton.center = CGPoint(x: self.bounds.midX, y: self.bounds.midY)
-            self.addSubview(dismissButton)
+            message.text = alert.message
+            addSubview(message)
+            
+            var constraints: Array<NSLayoutConstraint> = []
+            
+            constraints.append(title.topAnchor.constraint(equalTo: topAnchor, constant: 10))
+            constraints.append(title.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10))
+            constraints.append(title.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10))
+            constraints.append(title.heightAnchor.constraint(equalToConstant: 25))
+            
+            constraints.append(message.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 5))
+            constraints.append(message.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10))
+            constraints.append(message.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10))
+            constraints.append(message.heightAnchor.constraint(greaterThanOrEqualToConstant: 25))
+            
+            let isButtonLayoutVertical = true//alert.actions.count > 2
+            var padding = CGFloat(10)
+            var topView: UIView = message
+            
+            for action in alert.actions {
+                
+                if isButtonLayoutVertical {
+                    let dismissButton = AlertButton(action: action)
+                    dismissButton.backgroundColor = backgroundColor
+                    dismissButton.layer.borderColor = UIColor.blue.cgColor
+                    dismissButton.layer.borderWidth = 1.0
+                    dismissButton.translatesAutoresizingMaskIntoConstraints = false
+                    addSubview(dismissButton)
+                    
+                    constraints.append(dismissButton.topAnchor.constraint(equalTo: topView.bottomAnchor, constant: padding))
+                    constraints.append(dismissButton.trailingAnchor.constraint(equalTo: trailingAnchor))
+                    constraints.append(dismissButton.leadingAnchor.constraint(equalTo: leadingAnchor))
+                    constraints.append(dismissButton.heightAnchor.constraint(equalToConstant: 25))
+                    
+                    topView = dismissButton
+                }
+                
+                padding = 0
+            }
+            
+            addConstraints(constraints)
             
         }
+    }
+    
+    private func setupLayout() {
+        
     }
     
     @available(*, unavailable)
@@ -200,8 +256,8 @@ private final class AlertButton: UIButton {
     }
     
     private func commonInit() {
-        self.setTitle(action.title, for: .normal)
-        backgroundColor = .blue
+        setTitle(action.title, for: .normal)
+        setTitleColor(.black, for: .normal)
         actionHandler = action.handler
         self.addTarget(self, action: #selector(triggerActionHandler), for: .touchUpInside)
     }
