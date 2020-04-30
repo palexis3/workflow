@@ -172,7 +172,7 @@ private final class AlertView: UIView {
     
     public required init(alert: Alert?) {
         self.alert = alert
-        super.init(frame: CGRect(x:0,y:0,width:343,height:200))
+        super.init(frame: CGRect(x:0,y:0,width:343,height:150))
         commonInit()
     }
     
@@ -202,7 +202,7 @@ private final class AlertView: UIView {
             constraints.append(title.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10))
             constraints.append(title.heightAnchor.constraint(equalToConstant: 25))
 
-            constraints.append(message.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 5))
+            constraints.append(message.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 10))
             constraints.append(message.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10))
             constraints.append(message.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10))
             constraints.append(message.heightAnchor.constraint(equalToConstant: 25))

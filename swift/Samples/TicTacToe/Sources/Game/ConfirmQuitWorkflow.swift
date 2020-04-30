@@ -24,8 +24,6 @@ import AlertContainer
 
 struct ConfirmQuitWorkflow: Workflow {
     
-   // let baseScreen: AnyScreen
-    
    enum Output {
         case cancel
         case quit
@@ -37,8 +35,6 @@ struct ConfirmQuitWorkflow: Workflow {
 // MARK: State and Initialization
 
 extension ConfirmQuitWorkflow {
-
-    //typealias State = Void
     
     struct State {
         var step: Step
