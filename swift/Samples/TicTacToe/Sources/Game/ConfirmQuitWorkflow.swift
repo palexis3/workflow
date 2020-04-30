@@ -105,12 +105,18 @@ extension ConfirmQuitWorkflow {
         case .confirmTwice:
             alert = Alert(title: "Confirm Again",
                 message: "Do you really want to quit?",
-                actions: [AlertAction(title: "Ok",
+                actions: [AlertAction(title: "Yes, please!",
                                       style: AlertAction.Style.dismiss,
                                       handler: {
                                         sink.send(.quit)
-                        }
-                    )]
+                            }
+                        ),
+                        AlertAction(title: "Not really",
+                                          style: AlertAction.Style.dismiss,
+                                          handler: {
+                                            sink.send(.cancel)
+                            }
+                        )]
                 )
         }
         

@@ -192,46 +192,51 @@ private final class AlertView: UIView {
             message.text = alert.message
             addSubview(message)
             
-            var constraints: Array<NSLayoutConstraint> = []
+            let buttonStackView = setupButtons(actions: alert.actions)
+            addSubview(buttonStackView)
             
+            var constraints: Array<NSLayoutConstraint> = []
+
             constraints.append(title.topAnchor.constraint(equalTo: topAnchor, constant: 10))
             constraints.append(title.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10))
             constraints.append(title.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10))
             constraints.append(title.heightAnchor.constraint(equalToConstant: 25))
-            
+
             constraints.append(message.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 5))
             constraints.append(message.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10))
             constraints.append(message.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10))
-            constraints.append(message.heightAnchor.constraint(greaterThanOrEqualToConstant: 25))
+            constraints.append(message.heightAnchor.constraint(equalToConstant: 25))
             
-            let isButtonLayoutVertical = true//alert.actions.count > 2
-            var padding = CGFloat(10)
-            var topView: UIView = message
-            
-            for action in alert.actions {
-                
-                if isButtonLayoutVertical {
-                    let dismissButton = AlertButton(action: action)
-                    dismissButton.backgroundColor = backgroundColor
-                    dismissButton.layer.borderColor = UIColor.blue.cgColor
-                    dismissButton.layer.borderWidth = 1.0
-                    dismissButton.translatesAutoresizingMaskIntoConstraints = false
-                    addSubview(dismissButton)
-                    
-                    constraints.append(dismissButton.topAnchor.constraint(equalTo: topView.bottomAnchor, constant: padding))
-                    constraints.append(dismissButton.trailingAnchor.constraint(equalTo: trailingAnchor))
-                    constraints.append(dismissButton.leadingAnchor.constraint(equalTo: leadingAnchor))
-                    constraints.append(dismissButton.heightAnchor.constraint(equalToConstant: 25))
-                    
-                    topView = dismissButton
-                }
-                
-                padding = 0
-            }
+            constraints.append(buttonStackView.topAnchor.constraint(greaterThanOrEqualTo: message.bottomAnchor, constant: 15))
+            constraints.append(buttonStackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 0))
+            constraints.append(buttonStackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 0))
+            constraints.append(buttonStackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0))
+            constraints.append(buttonStackView.heightAnchor.constraint(greaterThanOrEqualToConstant: 50))
             
             addConstraints(constraints)
             
         }
+    }
+    
+    private func setupButtons(actions: [AlertAction]) -> UIStackView {
+        
+        let buttonStackView = UIStackView()
+        buttonStackView.axis = actions.count == 2 ? .horizontal : .vertical
+        buttonStackView.distribution = .fillEqually
+        buttonStackView.alignment = .fill
+        buttonStackView.translatesAutoresizingMaskIntoConstraints = false
+        
+        for action in actions {
+            let alertButton = AlertButton(action: action)
+            alertButton.backgroundColor = backgroundColor
+            alertButton.layer.borderColor = UIColor.gray.cgColor
+            alertButton.layer.borderWidth = 0.2
+            alertButton.translatesAutoresizingMaskIntoConstraints = false
+            
+            buttonStackView.addArrangedSubview(alertButton)
+        }
+        
+        return buttonStackView
     }
     
     private func setupLayout() {
