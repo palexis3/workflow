@@ -18,6 +18,7 @@ import Workflow
 import WorkflowUI
 import ReactiveSwift
 import ModalContainer
+import AlertContainer
 
 
 // MARK: Input and Output
@@ -36,14 +37,15 @@ struct AuthenticationWorkflow: Workflow {
 extension AuthenticationWorkflow {
 
     enum State {
-        case emailPassword(AuthenticationService.AuthenticationError?)
+        case emailPassword
+        case authenticationErrorAlert(error: AuthenticationService.AuthenticationError?)
         case authorizingEmailPassword(email: String, password: String)
         case twoFactor(intermediateSession: String, authenticationError: AuthenticationService.AuthenticationError?)
         case authorizingTwoFactor(twoFactorCode: String, intermediateSession: String)
     }
 
     func makeInitialState() -> AuthenticationWorkflow.State {
-        return .emailPassword(nil)
+        return .emailPassword
     }
 
     func workflowDidChange(from previousWorkflow: AuthenticationWorkflow, state: inout State) {
@@ -65,6 +67,7 @@ extension AuthenticationWorkflow {
         case verifySecondFactor(intermediateSession: String, twoFactorCode: String)
         case authenticationSucceeded(response: AuthenticationService.AuthenticationResponse)
         case authenticationError(AuthenticationService.AuthenticationError)
+        case dismissAuthenticationAlert
 
         func apply(toState state: inout AuthenticationWorkflow.State) -> AuthenticationWorkflow.Output? {
 
@@ -73,7 +76,7 @@ extension AuthenticationWorkflow {
             case .back:
                 switch state {
                 case .twoFactor:
-                    state = .emailPassword(nil)
+                    state = .emailPassword
 
                 default:
                     fatalError("Unexpected back in state \(state)")
@@ -91,11 +94,14 @@ extension AuthenticationWorkflow {
                 } else {
                     return .authorized(session: response.token)
                 }
+            
+            case .dismissAuthenticationAlert:
+                state = .emailPassword
 
             case .authenticationError(let error):
                 switch state {
                 case .authorizingEmailPassword:
-                    state = .emailPassword(error)
+                    state = .authenticationErrorAlert(error: error)
                 case .authorizingTwoFactor(twoFactorCode: _, intermediateSession: let intermediateSession):
                     state = .twoFactor(intermediateSession: intermediateSession, authenticationError: error)
 
@@ -173,22 +179,24 @@ extension AuthenticationWorkflow {
 
 extension AuthenticationWorkflow {
 
-    typealias Rendering = ModalContainerScreen<BackStackScreen>
+    typealias Rendering = AlertContainerScreen<ModalContainerScreen<BackStackScreen>>
 
     func render(state: AuthenticationWorkflow.State, context: RenderContext<AuthenticationWorkflow>) -> Rendering {
         let sink = context.makeSink(of: Action.self)
 
         var backStackItems: [BackStackScreen.Item] = []
+        var modals: [ModalContainerScreenModal] = []
+        var alert: Alert?
 
         let authenticationError: AuthenticationService.AuthenticationError?
 
-        if case let .emailPassword(error) = state {
+        if case let .authenticationErrorAlert(error) = state {
             authenticationError = error
         } else {
             authenticationError = nil
         }
 
-        let loginScreen = LoginWorkflow(error: authenticationError).mapOutput({ output -> Action in
+        let loginScreen = LoginWorkflow().mapOutput({ output -> Action in
             switch output {
             case .login(email: let email, password: let password):
                 return .login(email: email, password: password)
@@ -197,36 +205,51 @@ extension AuthenticationWorkflow {
         backStackItems.append(BackStackScreen.Item(screen: loginScreen, barVisibility: .hidden))
 
         switch state {
-        case .emailPassword:
-            break
-
-        case .authorizingEmailPassword(email: let email, password: let password):
-            context.awaitResult(for: AuthorizingEmailPasswordWorker(
-                authenticationService: authenticationService,
-                email: email,
-                password: password))
-
-            backStackItems.append(BackStackScreen.Item(screen: LoadingScreen(), barVisibility: .hidden))
-
-        case .twoFactor(intermediateSession: let intermediateSession, authenticationError: let authenticationError):
-            backStackItems.append(twoFactorScreen(
-                error: authenticationError,
-                intermediateSession: intermediateSession,
-                sink: sink))
-
-        case .authorizingTwoFactor(twoFactorCode: let twoFactorCode, intermediateSession: let intermediateSession):
-
-            context.awaitResult(
-                for: AuthorizingTwoFactorWorker(
+            case .emailPassword:
+                break
+            case .authenticationErrorAlert(error: let error):
+                if error != nil {
+                    alert = Alert(title: "Confirm Again",
+                    message: "Do you really want to quit?",
+                    actions: [AlertAction(title: "Ok",
+                                          style: AlertAction.Style.dismiss,
+                                          handler: {
+                                            sink.send(.dismissAuthenticationAlert)
+                            }
+                        )]
+                    )
+                }
+                
+            case .authorizingEmailPassword(email: let email, password: let password):
+                context.awaitResult(for: AuthorizingEmailPasswordWorker(
                     authenticationService: authenticationService,
-                    intermediateToken: intermediateSession,
-                    twoFactorCode: twoFactorCode))
+                    email: email,
+                    password: password))
+                modals.append(ModalContainerScreenModal(screen: AnyScreen(LoadingScreen()), style: .fullScreen, key: "", animated: false))
 
-            backStackItems.append(twoFactorScreen(error: nil, intermediateSession: intermediateSession, sink: sink))
-            backStackItems.append(BackStackScreen.Item(screen: LoadingScreen(), barVisibility: .hidden))
+            case .twoFactor(intermediateSession: let intermediateSession, authenticationError: let authenticationError):
+                backStackItems.append(twoFactorScreen(
+                    error: authenticationError,
+                    intermediateSession: intermediateSession,
+                    sink: sink))
+
+            case .authorizingTwoFactor(twoFactorCode: let twoFactorCode, intermediateSession: let intermediateSession):
+
+                context.awaitResult(
+                    for: AuthorizingTwoFactorWorker(
+                        authenticationService: authenticationService,
+                        intermediateToken: intermediateSession,
+                        twoFactorCode: twoFactorCode))
+
+                backStackItems.append(twoFactorScreen(error: nil, intermediateSession: intermediateSession, sink: sink))
+                modals.append(ModalContainerScreenModal(screen: AnyScreen(LoadingScreen()), style: .fullScreen, key: "", animated: false))
         }
-
-        return ModalContainerScreen(baseScreen: BackStackScreen(items: backStackItems), modals: [])
+        return AlertContainerScreen(
+            baseScreen: ModalContainerScreen(
+                    baseScreen: BackStackScreen(
+                            items: backStackItems),
+                    modals:modals),
+            alert: alert)
     }
 
     private func twoFactorScreen(error: AuthenticationService.AuthenticationError?, intermediateSession: String, sink: Sink<Action>) -> BackStackScreen.Item {

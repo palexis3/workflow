@@ -97,7 +97,7 @@ extension RunGameWorkflow {
 
 extension RunGameWorkflow {
 
-    typealias Rendering = (ModalContainerScreen<BackStackScreen>, Alert?)
+    typealias Rendering = AlertContainerScreen<ModalContainerScreen<BackStackScreen>>//(ModalContainerScreen<BackStackScreen>, Alert?)
 
     func render(state: RunGameWorkflow.State, context: RenderContext<RunGameWorkflow>) -> Rendering {
         let sink = context.makeSink(of: Action.self)
@@ -166,7 +166,7 @@ extension RunGameWorkflow {
         
         let modalContainerScreen = ModalContainerScreen(baseScreen: BackStackScreen(items: backStackItems), modals: modals)
 
-        return (modalContainerScreen, alert) // this is the base screen. Render all of the pieces of the backstack.
+        return AlertContainerScreen(baseScreen:modalContainerScreen, alert: alert) // this is the base screen. Render all of the pieces of the backstack.
     }
 
     private func newGameScreen(sink: Sink<Action>, playerX: String, playerO: String) -> NewGameScreen {

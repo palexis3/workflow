@@ -39,6 +39,8 @@ fileprivate final class LoadingScreenViewController: ScreenViewController<Loadin
         loadingLabel.textColor = .black
         loadingLabel.textAlignment = .center
         loadingLabel.text = "Loading..."
+        
+        self.view.backgroundColor = .white
 
         view.addSubview(loadingLabel)
     }

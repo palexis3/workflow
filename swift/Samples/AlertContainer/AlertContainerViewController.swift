@@ -77,6 +77,8 @@ internal final class AlertContainerViewController<AlertScreen : Screen>: ScreenV
             }
             else {
                 let inAlertView = AlertView(alert: alert)
+                inAlertView.backgroundColor = .init(white: 0.95, alpha: 1)
+                inAlertView.layer.cornerRadius = 10
                 alertView = inAlertView
                 inAlertView.accessibilityViewIsModal = true
                 view.insertSubview(inAlertView, aboveSubview: dimmingView)
@@ -150,20 +152,68 @@ internal final class AlertContainerViewController<AlertScreen : Screen>: ScreenV
 
 private final class AlertView: UIView {
     public var alert : Alert?
+    private lazy var title: UILabel = .init()
+    private lazy var message: UILabel = .init()
     
     public required init(alert: Alert?) {
         self.alert = alert
-        super.init(frame: CGRect.zero)
+        super.init(frame: CGRect(x:0,y:0,width:343,height:200))
+        commonInit()
     }
     
     public override convenience init(frame: CGRect) {
         self.init(alert: nil)
         self.frame = frame
+        commonInit()
+    }
+    
+    private func commonInit () {
+        
+        if let alert = alert {
+            
+            let action:AlertAction = alert.actions[0]
+            
+            let dismissButton = AlertButton(action: action)
+            dismissButton.backgroundColor = UIColor(red: 41/255, green: 150/255, blue: 204/255, alpha: 1.0)
+            dismissButton.frame = CGRect(x: 0, y: 0, width: 100, height: 50)
+            dismissButton.center = CGPoint(x: self.bounds.midX, y: self.bounds.midY)
+            self.addSubview(dismissButton)
+            
+        }
     }
     
     @available(*, unavailable)
     required public init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
 }
+
+private final class AlertButton: UIButton {
+    private var action: AlertAction
+    private var actionHandler: (() -> Void)?
+    
+    required init(action: AlertAction) {
+        self.action = action
+        
+        super.init(frame: .zero)
+        commonInit()
+    }
+    
+    private func commonInit() {
+        self.setTitle(action.title, for: .normal)
+        backgroundColor = .blue
+        actionHandler = action.handler
+        self.addTarget(self, action: #selector(triggerActionHandler), for: .touchUpInside)
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    @objc func triggerActionHandler() {
+        if let actionHandler = actionHandler {
+            actionHandler()
+        }
+    }
+}
+

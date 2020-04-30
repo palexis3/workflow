@@ -84,19 +84,18 @@ extension MainWorkflow {
 
         switch state {
         case .authenticating:
-            return AlertContainerScreen(baseScreen: AuthenticationWorkflow(
-                authenticationService: AuthenticationService())
-                .mapOutput({ output -> Action in
-                    switch output {
-                    case .authorized(session: let sessionToken):
-                        return .authenticated(sessionToken: sessionToken)
+            return AuthenticationWorkflow(
+                    authenticationService: AuthenticationService())
+                    .mapOutput({ output -> Action in
+                        switch output {
+                        case .authorized(session: let sessionToken):
+                            return .authenticated(sessionToken: sessionToken)
+                        }
                     }
-                }
-            )
-                .rendered(with: context), alert: nil)
+                )
+                .rendered(with: context)
         case .runningGame:
-            let (modalScreen, alert) = RunGameWorkflow().rendered(with: context)
-            return AlertContainerScreen(baseScreen: modalScreen, alert: alert)
+            return RunGameWorkflow().rendered(with: context)
         }
 
     }
